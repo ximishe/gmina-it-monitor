@@ -1,0 +1,25 @@
+# Konfiguracja produkcyjna i hasla
+config/config.php
+agent/config.ps1
+.env
+.env.*
+
+# Baza danych SQLite (same pliki danych, NIE schematy .sql)
+database/*.sqlite
+database/*.sqlite-journal
+database/*.sqlite-wal
+database/*.sqlite-shm
+*.sqlite
+*.sqlite3
+*.db
+!database/*.sql
+!database/*.sqlite.sql
+
+# Logi
+*.log
+
+# Pliki tymczasowe edytorow i OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

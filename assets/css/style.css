@@ -1,0 +1,197 @@
+/* Gmina IT Monitor - Stylistyka Administracyjna */
+
+:root {
+    --bg-main: #f8fafc;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+    --status-online: #10b981;
+    --status-offline: #64748b;
+    --status-error: #ef4444;
+    --status-warning: #f59e0b;
+    --status-skipped: #94a3b8;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Karty i sekcje */
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+}
+
+/* Liczniki podsumowania */
+.stat-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+}
+
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.stat-number {
+    font-size: 1.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+/* Tabela urządzeń i siatka danych (wyraźny zarys linii + 2 kolory na przemian) */
+.table {
+    margin-bottom: 0;
+}
+
+.main-devices-table {
+    border: 1px solid #cbd5e1 !important;
+    border-collapse: separate !important;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.main-devices-table th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    color: #1e293b !important;
+    background-color: #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-bottom: 2px solid #94a3b8 !important;
+    padding: 0.8rem 0.9rem;
+    vertical-align: middle;
+}
+
+.main-devices-table td {
+    padding: 0.85rem 0.9rem;
+    vertical-align: middle;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* 2 kolory wierszy na przemian: biały i szarawy (dla maksymalnej czytelności) */
+.main-devices-table tbody tr:nth-child(odd) td {
+    background-color: #ffffff;
+}
+
+.main-devices-table tbody tr:nth-child(even) td {
+    background-color: #f1f5f9;
+}
+
+/* Podświetlenie wiersza przy najechaniu myszką */
+.main-devices-table tbody tr:hover td {
+    background-color: #e2e8f0 !important;
+    transition: background-color 0.15s ease-in-out;
+}
+
+/* Zarys linii dla tabeli historii */
+#history-section .table {
+    border: 1px solid #cbd5e1 !important;
+}
+
+#history-section .table th {
+    background-color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    font-weight: 600;
+}
+
+#history-section .table td {
+    border: 1px solid #e2e8f0;
+}
+
+#history-section .table tbody tr:nth-child(even) td {
+    background-color: #f8fafc;
+}
+
+#history-section .table tbody tr:hover td {
+    background-color: #e2e8f0 !important;
+}
+
+/* Wskaźniki statusu */
+.badge-status-online {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-status-offline {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.badge-status-unknown {
+    background-color: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.badge-status-error {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.badge-status-warning {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.badge-status-ok {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.badge-status-skipped {
+    background-color: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+/* Kropki statusu */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.dot-online { background-color: var(--status-online); }
+.dot-offline { background-color: var(--status-offline); }
+.dot-unknown { background-color: var(--status-skipped); }
+.dot-error { background-color: var(--status-error); }
+.dot-warning { background-color: var(--status-warning); }
+
+/* Stopka */
+footer {
+    margin-top: auto;
+    border-top: 1px solid var(--border-color);
+    background-color: #ffffff;
+    font-size: 0.85rem;
+}
