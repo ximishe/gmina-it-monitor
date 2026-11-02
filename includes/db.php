@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 /**
- * Gmina IT Monitor - Inicjalizacja połączenia PDO
+ * Gmina IT Monitor - Inicjalizacja połączenia PDO i Auto-Migracje
  */
 
 function getAppConfig(): array {
@@ -59,7 +59,7 @@ function getDb(): PDO {
         $pdo->exec('PRAGMA journal_mode = WAL;');
 
         if ($isNewDb || !empty($config['app']['auto_migrate'])) {
-            initSqliteDatabase($pdo, $config);
+            initDatabase($pdo, 'sqlite', $config);
         }
     } elseif ($driver === 'mysql') {
         $host = $dbConfig['host'] ?? '127.0.0.1';
@@ -75,6 +75,10 @@ function getDb(): PDO {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+
+        if (!empty($config['app']['auto_migrate'])) {
+            initDatabase($pdo, 'mysql', $config);
+        }
     } else {
         throw new InvalidArgumentException("Nieobsługiwany sterownik bazy danych: {$driver}");
     }
@@ -83,23 +87,41 @@ function getDb(): PDO {
 }
 
 /**
- * Automatyczna inicjalizacja tabel i początkowego urządzenia w SQLite
+ * Automatyczna inicjalizacja tabel i początkowego urządzenia w SQLite / MySQL
  */
-function initSqliteDatabase(PDO $pdo, array $config): void {
-    // Sprawdź czy tabela devices istnieje
+function initDatabase(PDO $pdo, string $driver, array $config): void {
     $tableExists = false;
-    $res = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='devices'");
-    if ($res && $res->fetch()) {
-        $tableExists = true;
-    }
 
-    if (!$tableExists) {
-        $schemaFile = __DIR__ . '/../database/schema.sqlite.sql';
-        if (file_exists($schemaFile)) {
-            $sql = file_get_contents($schemaFile);
-            $pdo->exec($sql);
+    if ($driver === 'sqlite') {
+        $res = $pdo->query("SELECT name FROM sqlite_master WHERE type='table' AND name='devices'");
+        if ($res && $res->fetch()) {
+            $tableExists = true;
+        }
+
+        if (!$tableExists) {
+            $schemaFile = __DIR__ . '/../database/schema.sqlite.sql';
+            if (file_exists($schemaFile)) {
+                $sql = file_get_contents($schemaFile);
+                $pdo->exec($sql);
+            }
+        }
+    } else {
+        $res = $pdo->query("SHOW TABLES LIKE 'devices'");
+        if ($res && $res->fetch()) {
+            $tableExists = true;
+        }
+
+        if (!$tableExists) {
+            $schemaFile = __DIR__ . '/../database/schema.sql';
+            if (file_exists($schemaFile)) {
+                $sql = file_get_contents($schemaFile);
+                $pdo->exec($sql);
+            }
         }
     }
+
+    // Zapewnienie tabeli migracji i wykonanie oczekujących migracji
+    runMigrations($pdo, $driver);
 
     // Sprawdź czy istnieje zarejestrowany token
     $count = $pdo->query("SELECT COUNT(*) FROM device_tokens")->fetchColumn();
@@ -139,3 +161,118 @@ function initSqliteDatabase(PDO $pdo, array $config): void {
     }
 }
 
+/**
+ * Automatyczny mechanizm migracji bazy danych (SQLite / MySQL)
+ * Pozwala rozbudowywać bazę przy kolejnych aktualizacjach projektu.
+ */
+function runMigrations(PDO $pdo, string $driver): array {
+    // 1. Zapewnij tabelę rejestru migracji
+    if ($driver === 'sqlite') {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                version TEXT NOT NULL UNIQUE,
+                applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ");
+    } else {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS `schema_migrations` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `version` VARCHAR(128) NOT NULL UNIQUE,
+                `applied_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+    }
+
+    // 2. Pobierz już zaaplikowane migracje
+    $stmt = $pdo->query("SELECT version FROM schema_migrations");
+    $applied = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+    $appliedMap = array_flip($applied);
+
+    $migrationsDir = __DIR__ . '/../database/migrations';
+    if (!is_dir($migrationsDir)) {
+        return [];
+    }
+
+    $files = scandir($migrationsDir);
+    if (!$files) {
+        return [];
+    }
+
+    sort($files, SORT_NATURAL);
+    $executed = [];
+
+    foreach ($files as $file) {
+        if ($file === '.' || $file === '..' || strtolower($file) === 'readme.md') {
+            continue;
+        }
+
+        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        if ($ext !== 'sql' && $ext !== 'php') {
+            continue;
+        }
+
+        // Filtrowanie dedykowanych sterowników np. 002_xxx.sqlite.sql lub 002_xxx.mysql.sql
+        if (preg_match('/\.sqlite\.sql$/i', $file) && $driver !== 'sqlite') {
+            continue;
+        }
+        if (preg_match('/\.mysql\.sql$/i', $file) && $driver !== 'mysql') {
+            continue;
+        }
+
+        if (isset($appliedMap[$file])) {
+            continue;
+        }
+
+        $filePath = $migrationsDir . DIRECTORY_SEPARATOR . $file;
+
+        $pdo->beginTransaction();
+        try {
+            if ($ext === 'sql') {
+                $sql = file_get_contents($filePath);
+                if (trim($sql) !== '') {
+                    $pdo->exec($sql);
+                }
+            } elseif ($ext === 'php') {
+                $runner = require $filePath;
+                if (is_callable($runner)) {
+                    $runner($pdo, $driver);
+                }
+            }
+
+            $stmtIns = $pdo->prepare("INSERT INTO schema_migrations (version, applied_at) VALUES (:ver, CURRENT_TIMESTAMP)");
+            $stmtIns->execute([':ver' => $file]);
+
+            $pdo->commit();
+            $appliedMap[$file] = true;
+            $executed[] = $file;
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            error_log("Błąd migracji bazy ({$file}): " . $e->getMessage());
+            throw new RuntimeException("Błąd migracji bazy danych ({$file}): " . $e->getMessage(), 0, $e);
+        }
+    }
+
+    return $executed;
+}
+
+/**
+ * Pomocnik migracji sprawdzający czy kolumna istnieje w tabeli
+ */
+function dbColumnExists(PDO $pdo, string $table, string $column, string $driver = 'sqlite'): bool {
+    if ($driver === 'sqlite') {
+        $stmt = $pdo->query("PRAGMA table_info(" . preg_replace('/[^a-zA-Z0-9_]/', '', $table) . ")");
+        $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($columns as $c) {
+            if (strcasecmp($c['name'], $column) === 0) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        $stmt = $pdo->prepare("SHOW COLUMNS FROM `" . preg_replace('/[^a-zA-Z0-9_]/', '', $table) . "` LIKE :col");
+        $stmt->execute([':col' => $column]);
+        return (bool)$stmt->fetch();
+    }
+}

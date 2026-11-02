@@ -147,12 +147,26 @@ if ($action === 'update') {
     $newRepoInfo = getGitRepoInfo($projectRoot);
 
     if ($updateRes['code'] === 0) {
+        $migrated = [];
+        try {
+            $pdo = getDb();
+            $driver = $config['db']['driver'] ?? 'sqlite';
+            $migrated = runMigrations($pdo, $driver);
+        } catch (Throwable $e) {
+            error_log("Błąd migracji po aktualizacji: " . $e->getMessage());
+        }
+
+        $migMsg = !empty($migrated) 
+            ? " (Zaaplikowano nowe migracje bazy: " . implode(", ", $migrated) . ")" 
+            : "";
+
         jsonResponse([
             'success' => true,
-            'message' => 'Aplikacja została pomyślnie zaktualizowana do najnowszej wersji z GitHuba!',
+            'message' => 'Aplikacja oraz baza danych zostały pomyślnie zaktualizowane!' . $migMsg,
             'previous_commit' => $repoInfo['commit'],
             'new_commit' => $newRepoInfo['commit'],
             'new_message' => $newRepoInfo['message'],
+            'migrations_applied' => $migrated,
             'output' => $updateRes['output']
         ]);
     } else {
@@ -166,3 +180,4 @@ if ($action === 'update') {
 }
 
 jsonError('Nieznana akcja: ' . htmlspecialchars($action), 400);
+
