@@ -841,7 +841,12 @@ try {
         -ContentType "application/json; charset=utf-8" `
         -Body $JsonBytes `
         -TimeoutSec $HttpTimeout `
-        -ErrorAction Stop
+
+    if ($response -is [string]) {
+        try {
+            $response = ($response.Trim().Trim([char]0xFEFF)) | ConvertFrom-Json
+        } catch {}
+    }
 
     if ($response -and $response.success) {
         Write-Host "`n[SUKCES] Raport przyjety przez API Gmina IT Monitor!" -ForegroundColor Green

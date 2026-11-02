@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Gmina IT Monitor - API Endpoint: System Update
  * Umożliwia sprawdzenie statusu wersji oraz samoczynną aktualizację z publicznego GitHuba

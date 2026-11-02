@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Gmina IT Monitor - Inicjalizacja połączenia PDO i Auto-Migracje
  */

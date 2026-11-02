@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Gmina IT Monitor - Plik konfiguracyjny (Przykładowy)
  * Skopiuj jako config.php i dostosuj do swojego środowiska.
