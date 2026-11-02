@@ -233,7 +233,7 @@ $appSubtitle = $config['app']['subtitle'] ?? 'Lokalny monitoring infrastruktury 
                             Dzięki modułowi <strong>Bootstrap</strong> nie musisz ręcznie kopiować plików na stacje robocze. Komputery w domenie pobierają najnowszy skrypt bezpośrednio z serwera WWW:
                         </p>
                         <div class="bg-light p-2 rounded border font-monospace small mb-3 text-break">
-                            powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -Command "iex (New-Object Net.WebClient).DownloadString('http://192.168.60.2/it-monitor/agent/monitor.ps1')"
+                            powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -Command "iex (New-Object Net.WebClient).DownloadString('http://adminmonitor.gminaleszno.local/agent/bootstrap.ps1')"
                         </div>
                         <ul class="small text-muted ps-3 mb-0">
                             <li><strong>Auto-wykrywanie drukarek:</strong> Drukarki korytarzowe Ricoh (15.60) i Konica (15.50) + automatycznie drukarki w pokojach (15.x/115.x).</li>
@@ -369,7 +369,7 @@ $appSubtitle = $config['app']['subtitle'] ?? 'Lokalny monitoring infrastruktury 
                         W konsoli <code>gpmc.msc</code> przejdź do: <strong>Konfiguracja komputera → Preferencje → Ustawienia panelu sterowania → Zaplanowane zadania</strong> i dodaj zadanie z wyzwalaczem co 15 minut:
                     </p>
                     <div class="bg-light p-3 rounded border font-monospace small mb-3 text-break user-select-all">
-                        powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -Command "iex (New-Object Net.WebClient).DownloadString('http://192.168.60.2/it-monitor/agent/monitor.ps1')"
+                        powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -Command "iex (New-Object Net.WebClient).DownloadString('http://adminmonitor.gminaleszno.local/agent/bootstrap.ps1')"
                     </div>
 
                     <h6 class="fw-bold text-dark mb-2">2. Alternatywa: Skrypt startowy komputera (Startup Script)</h6>

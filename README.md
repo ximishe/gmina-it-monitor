@@ -1,4 +1,4 @@
-﻿# Gmina IT Monitor — Lokalny monitoring infrastruktury Windows
+# Gmina IT Monitor — Lokalny monitoring infrastruktury Windows
 
 **Gmina IT Monitor** to lekkie, bezpieczne i niezależne rozwiązanie do ciągłego monitorowania komputerów z systemem Windows w urzędzie gminy, jednostce samorządowej lub firmie. 
 
@@ -144,7 +144,7 @@ Przykładowy fragment pliku `/etc/nginx/sites-available/it-monitor`:
 ```nginx
 server {
     listen 80;
-    server_name 192.168.1.50 it-monitor.gmina.local; # Zmień na IP Twojej maszyny VM
+    server_name adminmonitor.gminaleszno.local;
 
     root /var/www/html/it-monitor;
     index index.php index.html;
@@ -217,7 +217,7 @@ sudo systemctl reload nginx
    sudo chown www-data:www-data /var/www/html/it-monitor/config/config.php
    ```
 2. Otwórz w przeglądarce test stanu:
-   `http://192.168.1.50/api/health.php`
+   `http://adminmonitor.gminaleszno.local/api/health.php`
    Powinieneś otrzymać odpowiedź JSON:
    ```json
    {
@@ -231,7 +231,7 @@ sudo systemctl reload nginx
    *(Baza SQLite `database/it_monitor.sqlite` utworzy się automatycznie z domyślnym tokenem).*
 
 3. Otwórz panel główny:
-   `http://192.168.1.50/`
+   `http://adminmonitor.gminaleszno.local/`
 
 ---
 
@@ -244,7 +244,7 @@ sudo systemctl reload nginx
    git commit -m "Nowy test dysku i poprawki wyglądu"
    git push origin main
    ```
-2. Otwierasz panel WWW na serwerze Ubuntu (`http://192.168.1.50/`).
+2. Otwierasz panel WWW na serwerze Ubuntu (`http://adminmonitor.gminaleszno.local/`).
 3. W prawym górnym rogu klikasz przycisk **`Aktualizacja`**:
    - Wyświetli się okno z bieżącym commitem i datą.
    - Klikasz **„Sprawdź na GitHubie”** — API sprawdzi ile nowych commitów czeka na publicznym repozytorium.
@@ -267,7 +267,7 @@ Dzięki plikowi [agent/bootstrap.ps1](agent/bootstrap.ps1) **nie musisz wdraża�
 Upewnij się, że parametr `$ServerUrl` w `agent/bootstrap.ps1` wskazuje na adres Twojego serwera Nginx:
 ```powershell
 param(
-    [string]$ServerUrl = "http://192.168.1.50/agent/monitor.ps1",
+    [string]$ServerUrl = "http://adminmonitor.gminaleszno.local/agent/monitor.ps1",
     [string]$CacheDir  = "$env:ProgramData\GminaITMonitor"
 )
 ```
@@ -290,7 +290,7 @@ param(
      - Program/skrypt: `powershell.exe`
      - Argumenty:
        ```powershell
-       -ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -Command "iex (New-Object System.Net.WebClient).DownloadString('http://192.168.1.50/agent/bootstrap.ps1')"
+       -ExecutionPolicy Bypass -NoProfile -WindowStyle Hidden -Command "iex (New-Object System.Net.WebClient).DownloadString('http://adminmonitor.gminaleszno.local/agent/bootstrap.ps1')"
        ```
        *(Możesz też skopiować plik `bootstrap.ps1` do zasobu domenowego `\\twoja-domena\sysvol\...\scripts` i wskazać go parametrem `-File`).*
 

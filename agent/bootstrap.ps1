@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Gmina IT Monitor - Active Directory Bootstrap Launcher (Auto-Patcher)
 .DESCRIPTION
@@ -10,7 +10,7 @@
 
 param(
     # Adres Twojego serwera Nginx na maszynie wirtualnej Ubuntu
-    [string]$ServerUrl = "http://192.168.1.50/agent/monitor.ps1",
+    [string]$ServerUrl = "http://adminmonitor.gminaleszno.local/agent/monitor.ps1",
     [string]$CacheDir  = "$env:ProgramData\GminaITMonitor"
 )
 

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Gmina IT Monitor - Agent PowerShell (stacja robocza Windows)
 .DESCRIPTION
@@ -32,7 +32,7 @@ if (Test-Path $ConfigFile) {
 }
 
 # Wartości domyślne (działają nawet przy braku pliku config.ps1 przy pobraniu przez GPO)
-$ApiUrl      = if ($Config.ApiUrl)      { [string]$Config.ApiUrl }      else { "http://192.168.60.2/it-monitor/api/heartbeat.php" }
+$ApiUrl      = if ($Config.ApiUrl)      { [string]$Config.ApiUrl }      else { "http://adminmonitor.gminaleszno.local/api/heartbeat.php" }
 $DeviceToken = if ($Config.DeviceToken) { [string]$Config.DeviceToken } else { "gmina-it-adm-token-2026-secret" }
 $AgentVer    = if ($Config.AgentVersion) { [string]$Config.AgentVersion } else { "1.1.0" }
 $PingTimeout = if ($Config.PingTimeoutMs) { [int]$Config.PingTimeoutMs } else { 1500 }
@@ -407,8 +407,8 @@ $DnsServersJoined = $DnsServerList -join ", "
 
 Write-Host " Host:     $Hostname" -ForegroundColor Gray
 Write-Host " Uzytkownik: $LoggedUser" -ForegroundColor Cyan
-Write-Host " Pakiet Office: $OfficeVersion" -ForegroundColor Cyan
-Write-Host " Ostatni HotFix: $LastUpdateInfo (Restart: $(if ($PendingReboot) { 'WYMAGANY' } else { 'Nie' }))" $rebootColor = if ($PendingReboot) { 'Yellow' } else { 'Gray' }
+$rebootColor = if ($PendingReboot) { 'Yellow' } else { 'Gray' }
+Write-Host " Ostatni HotFix: $LastUpdateInfo (Restart: $(if ($PendingReboot) { 'WYMAGANY' } else { 'Nie' }))" -ForegroundColor $rebootColor
 Write-Host " Domena:   $(if ($DomainName) { $DomainName } else { '(Grupa robocza)' })" -ForegroundColor Gray
 Write-Host " System:   $OsName ($OsVersion)" -ForegroundColor Gray
 Write-Host " IP LAN:   $PrimaryIp (Karta: $LanAdapterName)" -ForegroundColor Green
