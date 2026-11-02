@@ -593,6 +593,139 @@ if ($inetTcp.Success) {
     })
 }
 
+# --- F0. Domyslna Drukarka Uzytkownika ---
+try {
+    $allPrinters = Get-CimInstance Win32_Printer -ErrorAction SilentlyContinue
+    $defPrinter = $allPrinters | Where-Object { $_.Default -eq $true } | Select-Object -First 1
+
+    # Rezerwowe sprawdzenie z rejestru biezacego uzytkownika jesli flaga Default nie jest ustawiona w WMI
+    if (-not $defPrinter) {
+        $regDef = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Windows' -ErrorAction SilentlyContinue).Device
+        if ($regDef) {
+            $defName = $regDef.Split(',')[0]
+            $defPrinter = $allPrinters | Where-Object { $_.Name -eq $defName } | Select-Object -First 1
+        }
+    }
+
+    if ($defPrinter) {
+        $pName = $defPrinter.Name
+        $pPort = $defPrinter.PortName
+        $isVirtual = ($pName -match 'PDF|OneNote|XPS|Fax' -or $pPort -match 'PORTPROMPT|nul:')
+        $isOffline = ($defPrinter.WorkOffline -eq $true)
+        
+        # Wyciagniecie IP drukarki z portu lub nazwy
+        $pIp = ""
+        $search = "$pPort $pName"
+        if ($search -match '(?:\d{1,3}\.){3}\d{1,3}') {
+            $pIp = $matches[0]
+        }
+
+        # Serwer wydruku (np. \\VM-AD1)
+        $pServer = if ($defPrinter.ServerName) { $defPrinter.ServerName.TrimStart('\') } else { "" }
+
+        if ($isVirtual) {
+            $Tests.Add([PSCustomObject]@{
+                key         = "default_printer"
+                name        = "Domyslna drukarka: $pName"
+                status      = "WARNING"
+                message     = "Ustawiono drukarke wirtualna ($pName). Brak fizycznej drukarki domyslnej."
+                duration_ms = $null
+                checked_at  = $NowUtc
+            })
+        } elseif ($isOffline) {
+            $Tests.Add([PSCustomObject]@{
+                key         = "default_printer"
+                name        = "Domyslna drukarka: $pName"
+                status      = "WARNING"
+                message     = "Drukarka $pName jest przelaczona w tryb OFFLINE w systemie Windows."
+                duration_ms = $null
+                checked_at  = $NowUtc
+            })
+        } elseif (-not [string]::IsNullOrWhiteSpace($pIp)) {
+            $pTcp = Test-TcpPort -HostName $pIp -Port 9100 -TimeoutMs $TcpTimeout
+            if ($pTcp.Success) {
+                $Tests.Add([PSCustomObject]@{
+                    key         = "default_printer"
+                    name        = "Domyslna drukarka: $pName"
+                    status      = "OK"
+                    message     = "Drukarka $pName ($pIp) gotowa do pracy (port 9100 aktywny, $($pTcp.DurationMs) ms)"
+                    duration_ms = $pTcp.DurationMs
+                    checked_at  = $NowUtc
+                })
+            } else {
+                $pPing = Test-IcmpPing -Address $pIp -TimeoutMs $PingTimeout
+                if ($pPing.Success) {
+                    $Tests.Add([PSCustomObject]@{
+                        key         = "default_printer"
+                        name        = "Domyslna drukarka: $pName"
+                        status      = "OK"
+                        message     = "Drukarka $pName ($pIp) odpowiada w sieci (ICMP $($pPing.Rtt) ms)"
+                        duration_ms = $pPing.Rtt
+                        checked_at  = $NowUtc
+                    })
+                } else {
+                    $Tests.Add([PSCustomObject]@{
+                        key         = "default_printer"
+                        name        = "Domyslna drukarka: $pName"
+                        status      = "ERROR"
+                        message     = "Brak komunikacji sieciowej z domyslna drukarka $pName ($pIp)"
+                        duration_ms = $null
+                        checked_at  = $NowUtc
+                    })
+                }
+            }
+        } elseif (-not [string]::IsNullOrWhiteSpace($pServer)) {
+            $srvTcp = Test-TcpPort -HostName $pServer -Port 445 -TimeoutMs $TcpTimeout
+            if ($srvTcp.Success) {
+                $Tests.Add([PSCustomObject]@{
+                    key         = "default_printer"
+                    name        = "Domyslna drukarka: $pName"
+                    status      = "OK"
+                    message     = "Kolejka z serwera wydruku \\$pServer aktywna ($($srvTcp.DurationMs) ms)"
+                    duration_ms = $srvTcp.DurationMs
+                    checked_at  = $NowUtc
+                })
+            } else {
+                $Tests.Add([PSCustomObject]@{
+                    key         = "default_printer"
+                    name        = "Domyslna drukarka: $pName"
+                    status      = "ERROR"
+                    message     = "Serwer wydruku \\$pServer dla drukarki $pName nie odpowiada."
+                    duration_ms = $null
+                    checked_at  = $NowUtc
+                })
+            }
+        } else {
+            $Tests.Add([PSCustomObject]@{
+                key         = "default_printer"
+                name        = "Domyslna drukarka: $pName"
+                status      = "OK"
+                message     = "Drukarka lokalna/USB: $pName (Port: $pPort)"
+                duration_ms = $null
+                checked_at  = $NowUtc
+            })
+        }
+    } else {
+        $Tests.Add([PSCustomObject]@{
+            key         = "default_printer"
+            name        = "Domyslna drukarka"
+            status      = "WARNING"
+            message     = "Brak ustawionej domyslnej drukarki w profilu uzytkownika."
+            duration_ms = $null
+            checked_at  = $NowUtc
+        })
+    }
+} catch {
+    $Tests.Add([PSCustomObject]@{
+        key         = "default_printer"
+        name        = "Domyslna drukarka"
+        status      = "WARNING"
+        message     = "Blad podczas odczytu drukarki: $($_.Exception.Message)"
+        duration_ms = $null
+        checked_at  = $NowUtc
+    })
+}
+
 # --- F1. Drukarka Korytarzowa 1 (Ricoh IM C3010 - 192.168.15.60) ---
 $ricohIp = "192.168.15.60"
 $rTcp = Test-TcpPort -HostName $ricohIp -Port 9100 -TimeoutMs $TcpTimeout
