@@ -33,7 +33,7 @@ if (Test-Path $ConfigFile) {
 
 # Wartości domyślne (działają nawet przy braku pliku config.ps1 przy pobraniu przez GPO)
 $ApiUrl      = if ($Config.ApiUrl)      { [string]$Config.ApiUrl }      else { "http://adminmonitor.gminaleszno.local/api/heartbeat.php" }
-$DeviceToken = if ($Config.DeviceToken) { [string]$Config.DeviceToken } else { "gmina-it-adm-token-2026-secret" }
+$DeviceToken = if ($Config.DeviceToken) { [string]$Config.DeviceToken } else { "TUTAJ_WPISZ_WLASNY_LOSOWY_TAJNY_TOKEN" }
 $AgentVer    = if ($Config.AgentVersion) { [string]$Config.AgentVersion } else { "1.1.0" }
 $PingTimeout = if ($Config.PingTimeoutMs) { [int]$Config.PingTimeoutMs } else { 1500 }
 $TcpTimeout  = if ($Config.TcpTimeoutMs)  { [int]$Config.TcpTimeoutMs }  else { 2000 }
