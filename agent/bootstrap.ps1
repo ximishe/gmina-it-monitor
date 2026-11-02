@@ -11,8 +11,14 @@
 param(
     # Adres Twojego serwera Nginx na maszynie wirtualnej Ubuntu
     [string]$ServerUrl = "http://adminmonitor.gminaleszno.local/agent/monitor.ps1",
-    [string]$CacheDir  = "$env:ProgramData\GminaITMonitor"
+    [string]$CacheDir  = ""
 )
+
+if ([string]::IsNullOrWhiteSpace($CacheDir)) {
+    # Dla zalogowanego usera w AD: LocalAppData (100% praw zapisu bez admina)
+    # Dla konta maszyny SYSTEM: ProgramData
+    $CacheDir = if ($env:LOCALAPPDATA) { "$env:LOCALAPPDATA\GminaITMonitor" } else { "$env:ProgramData\GminaITMonitor" }
+}
 
 # Wymuszenie protokołów TLS 1.2 i TLS 1.1 dla starszych stacji z PowerShell 5.1
 try {
